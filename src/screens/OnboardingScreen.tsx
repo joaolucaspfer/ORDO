@@ -21,6 +21,9 @@ import {
   BODY_PARTS,
   PRAYER_ITEMS,
   STUDY_FREQ_OPTIONS,
+  TIME_OF_DAY_OPTIONS,
+  TRAINING_DURATION_OPTIONS,
+  STUDY_TIME_OPTIONS,
   type OnboardAnswers,
 } from '../lib/onboarding';
 import { CATEGORY_MAP } from '../lib/categories';
@@ -64,15 +67,19 @@ const INITIAL_ANSWERS: OnboardAnswers = {
   trainingType: null,
   trainingParts: [],
   trainingOther: '',
+  trainingTime: null,
+  trainingMinutes: null,
   prayer: null as never as boolean,
   prayerItems: [],
   study: null as never as boolean,
   studyFreq: null,
   studySubject: '',
   studyMinutes: null,
+  studyTime: null,
   work: null as never as boolean,
   workName: '',
   workDays: null,
+  workStartTime: '',
 };
 
 type StepKey =
@@ -83,10 +90,13 @@ type StepKey =
   | 'trainingType'
   | 'trainingParts'
   | 'trainingOther'
+  | 'trainingTime'
+  | 'trainingDuration'
   | 'prayer'
   | 'prayerItems'
   | 'study'
   | 'studyDetails'
+  | 'studyTime'
   | 'work'
   | 'workDetails'
   | 'review';
@@ -107,11 +117,12 @@ function buildSteps(a: OnboardAnswers): StepKey[] {
     steps.push('trainingFreq', 'trainingType');
     if (a.trainingType === 'gym') steps.push('trainingParts');
     if (a.trainingType === 'other') steps.push('trainingOther');
+    steps.push('trainingTime', 'trainingDuration');
   }
   steps.push('prayer');
   if (a.prayer) steps.push('prayerItems');
   steps.push('study');
-  if (a.study) steps.push('studyDetails');
+  if (a.study) steps.push('studyDetails', 'studyTime');
   steps.push('work');
   if (a.work) steps.push('workDetails');
   steps.push('review');
@@ -160,6 +171,16 @@ const STEP_META: Record<StepKey, { emoji: string; title: string; subtitle: strin
     title: 'Como se chama o teu treino?',
     subtitle: 'Ex.: Calistenia, CrossFit, artes marciais…',
   },
+  trainingTime: {
+    emoji: '⏰',
+    title: 'A que horas preferes treinar?',
+    subtitle: 'Escolhe a altura do dia que mais te convém.',
+  },
+  trainingDuration: {
+    emoji: '⏱️',
+    title: 'Quanto tempo dura cada sessão?',
+    subtitle: 'Isto ajuda a agendar a tarefa com a duração certa.',
+  },
   prayer: {
     emoji: '🙏',
     title: 'Queres momentos de oração?',
@@ -179,6 +200,11 @@ const STEP_META: Record<StepKey, { emoji: string; title: string; subtitle: strin
     emoji: '🕓',
     title: 'Como estudas?',
     subtitle: 'O que estudas, com que frequência e por quanto tempo.',
+  },
+  studyTime: {
+    emoji: '⏰',
+    title: 'Quando estudas?',
+    subtitle: 'Escolhe a melhor altura do dia para estudar.',
   },
   work: {
     emoji: '💼',
@@ -270,6 +296,10 @@ export default function OnboardingScreen({ onDone }: Props) {
       ? answers.trainingParts.length > 0
       : current === 'trainingOther'
       ? answers.trainingOther.trim().length > 0
+      : current === 'trainingTime'
+      ? answers.trainingTime != null
+      : current === 'trainingDuration'
+      ? answers.trainingMinutes != null
       : current === 'prayer'
       ? answers.prayer != null
       : current === 'prayerItems'
@@ -278,6 +308,8 @@ export default function OnboardingScreen({ onDone }: Props) {
       ? answers.study != null
       : current === 'studyDetails'
       ? answers.studyFreq != null
+      : current === 'studyTime'
+      ? answers.studyTime != null
       : current === 'work'
       ? answers.work != null
       : current === 'workDetails'
@@ -572,6 +604,40 @@ export default function OnboardingScreen({ onDone }: Props) {
       );
     }
 
+    if (current === 'trainingTime') {
+      return (
+        <View style={styles.chipList}>
+          {TIME_OF_DAY_OPTIONS.map((o) => {
+            const active = answers.trainingTime === o.value;
+            return (
+              <Pressable key={o.value} style={[styles.bigOptionRow, active && styles.bigOptionRowActive]} onPress={() => set('trainingTime', o.value)}>
+                <Text style={styles.bigOptionEmoji}>{o.emoji}</Text>
+                <View style={styles.bigOptionRowWrap}>
+                  <Text style={styles.bigOptionRowText}>{o.label}</Text>
+                  <Text style={styles.bigOptionMeta}>{o.hint}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      );
+    }
+
+    if (current === 'trainingDuration') {
+      return (
+        <View style={styles.chipList}>
+          {TRAINING_DURATION_OPTIONS.map((o) => {
+            const active = answers.trainingMinutes === o.value;
+            return (
+              <Pressable key={o.value} style={[styles.bigOption, active && styles.bigOptionActive]} onPress={() => set('trainingMinutes', o.value)}>
+                <Text style={styles.bigOptionTitle}>{o.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      );
+    }
+
     if (current === 'prayerItems') {
       return (
         <View style={styles.chipList}>
@@ -637,6 +703,22 @@ export default function OnboardingScreen({ onDone }: Props) {
       );
     }
 
+    if (current === 'studyTime') {
+      return (
+        <View style={styles.chipList}>
+          {STUDY_TIME_OPTIONS.map((o) => {
+            const active = answers.studyTime === o.value;
+            return (
+              <Pressable key={o.value} style={[styles.bigOptionRow, active && styles.bigOptionRowActive]} onPress={() => set('studyTime', o.value)}>
+                <Text style={styles.bigOptionEmoji}>{o.emoji}</Text>
+                <Text style={styles.bigOptionRowText}>{o.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      );
+    }
+
     if (current === 'workDetails') {
       return (
         <View>
@@ -648,6 +730,15 @@ export default function OnboardingScreen({ onDone }: Props) {
             value={answers.workName}
             onChangeText={(workName) => set('workName', workName)}
             autoCapitalize="words"
+          />
+          <Text style={styles.label}>A que horas começass? (opcional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="09:00"
+            placeholderTextColor={theme.subtext}
+            value={answers.workStartTime}
+            onChangeText={(workStartTime) => set('workStartTime', workStartTime)}
+            keyboardType="numbers-and-punctuation"
           />
           <Text style={styles.label}>Em que dias?</Text>
           <View style={styles.chipsRow}>

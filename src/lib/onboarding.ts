@@ -1,7 +1,8 @@
 import type { Category } from './categories';
-import { ALL_DAYS_MASK } from './dates';
+import { ALL_DAYS_MASK, labelToTimeMin } from './dates';
 
 export type TrainingType = 'gym' | 'football' | 'run' | 'swim' | 'other';
+export type TimeOfDay = 'morning' | 'afternoon' | 'evening';
 
 export interface OnboardAnswers {
   name: string;
@@ -16,15 +17,19 @@ export interface OnboardAnswers {
   trainingType: TrainingType | null;
   trainingParts: string[];
   trainingOther: string;
+  trainingTime: TimeOfDay | null;
+  trainingMinutes: number | null;
   prayer: boolean;
   prayerItems: string[];
   study: boolean;
   studyFreq: 'all' | 'some' | 'few' | null;
   studySubject: string;
   studyMinutes: number | null;
+  studyTime: TimeOfDay | null;
   work: boolean;
   workName: string;
   workDays: 'all' | 'weekdays' | null;
+  workStartTime: string;
 }
 
 export interface PendingTask {
@@ -42,6 +47,25 @@ export const TRAINING_FREQ_OPTIONS: { value: number; label: string; hint: string
   { value: 2, label: '2–3x', hint: 'Leve' },
   { value: 4, label: '4–5x', hint: 'Consistente' },
   { value: 6, label: '6x+', hint: 'Atleta' },
+];
+
+export const TIME_OF_DAY_OPTIONS: { value: TimeOfDay; label: string; emoji: string; hint: string }[] = [
+  { value: 'morning', label: 'Manhã', emoji: '🌅', hint: '6h – 12h' },
+  { value: 'afternoon', label: 'Tarde', emoji: '☀️', hint: '12h – 18h' },
+  { value: 'evening', label: 'Noite', emoji: '🌙', hint: '18h – 22h' },
+];
+
+export const TRAINING_DURATION_OPTIONS: { value: number; label: string }[] = [
+  { value: 30, label: '30 min' },
+  { value: 45, label: '45 min' },
+  { value: 60, label: '60 min' },
+  { value: 90, label: '90 min' },
+];
+
+export const STUDY_TIME_OPTIONS: { value: TimeOfDay; label: string; emoji: string }[] = [
+  { value: 'morning', label: 'Manhã', emoji: '🌅' },
+  { value: 'afternoon', label: 'Tarde', emoji: '☀️' },
+  { value: 'evening', label: 'Noite', emoji: '🌙' },
 ];
 
 export const FREQ_DAYS: Record<number, number[]> = {
@@ -139,6 +163,60 @@ export const PRAYER_ITEMS: {
     minutes: 5,
     details: 'Exame de consciência\nAgradecer o dia e pedir luz',
   },
+  {
+    key: 'terco_misericordia',
+    label: 'Terço da Misericórdia',
+    emoji: '🙏',
+    time: (w) => w + 90,
+    days: ALL_DAYS_MASK,
+    minutes: 15,
+    details: 'Terço da Divina Misericórdia\nAs horas da Misericórdia',
+  },
+  {
+    key: 'rosario_sjose',
+    label: 'Rosário de São José',
+    emoji: '🔧',
+    time: () => 19 * 60,
+    days: ALL_DAYS_MASK,
+    minutes: 15,
+    details: 'Rosário de São José\nPadroeiro da Igreja',
+  },
+  {
+    key: 'hora_santa',
+    label: 'Hora Santa',
+    emoji: '🕯️',
+    time: () => 21 * 60,
+    days: ALL_DAYS_MASK,
+    minutes: 30,
+    details: 'Hora Santa\nAdoração ao Santíssimo Sacramento',
+  },
+  {
+    key: 'oracao_miguel',
+    label: 'Oração de São Miguel',
+    emoji: '⚔️',
+    time: (w) => w + 5,
+    days: ALL_DAYS_MASK,
+    minutes: 5,
+    details: 'Oração a São Miguel Arcanjo\nProteção espiritual',
+  },
+  {
+    key: 'salve_rainha',
+    label: 'Salve Rainha',
+    emoji: '👑',
+    time: () => 18 * 60,
+    days: ALL_DAYS_MASK,
+    minutes: 3,
+    details: 'Salve Rainha\nHino mariano de devoção',
+  },
+  {
+    key: 'jesus_vive',
+    label: 'Jesus Vive',
+    emoji: '💛',
+    time: (w) => w + 60,
+    days: ALL_DAYS_MASK,
+    minutes: 10,
+    details: 'Jesus Vive\nAdoração e comunhão espiritual',
+  },
 ];
 
 export const STUDY_FREQ_OPTIONS: {
@@ -163,11 +241,21 @@ function maskOfDayIndexes(indexes: number[]): number {
   return indexes.reduce((acc, day) => acc | (1 << day), 0);
 }
 
+function suggestTime(wakeMin: number, timeOfDay: TimeOfDay | null, fallbackOffset: number): number {
+  if (timeOfDay === 'morning') return wakeMin + 120;
+  if (timeOfDay === 'afternoon') return 13 * 60;
+  if (timeOfDay === 'evening') return 19 * 60;
+  return wakeMin + fallbackOffset;
+}
+
 export function buildOnboardingRoutine(a: OnboardAnswers): PendingTask[] {
   const tasks: PendingTask[] = [];
 
   if (a.training && a.trainingFreq != null && a.trainingType) {
     const daysArr = FREQ_DAYS[a.trainingFreq] ?? [1];
+    const trainTime = suggestTime(a.wakeMin, a.trainingTime, 600);
+    const trainDuration = a.trainingMinutes ?? 60;
+
     if (a.trainingType === 'gym') {
       const parts = a.trainingParts.length > 0 ? a.trainingParts : ['Full body'];
       const perDay = a.trainingFreq >= 4 ? 1 : 2;
@@ -178,33 +266,32 @@ export function buildOnboardingRoutine(a: OnboardAnswers): PendingTask[] {
           key: `train-${i}`,
           title: `Treino — ${name}`,
           category: 'training',
-          timeMin: a.wakeMin + 600,
+          timeMin: trainTime,
           days: maskOfDayIndexes([day]),
-          details: `Treino de academia · ${name}`,
-          targetMinutes: 60,
+          details: `Academia · ${name}\nDuração: ${trainDuration} min`,
+          targetMinutes: trainDuration,
         });
       });
     } else {
-      const spec: Record<TrainingType, { title: string; minutes: number; details: string }> = {
-        football: { title: 'Treino de futebol', minutes: 60, details: 'Treino de futebol\nToque, técnica e jogo' },
-        run: { title: 'Corrida', minutes: 35, details: 'Sessão de corrida\nAquecimento, ritmo e alongamento' },
-        swim: { title: 'Natação', minutes: 45, details: 'Sessão de natação\nÁgua fria escreve a alma' },
+      const spec: Record<TrainingType, { title: string; details: string }> = {
+        football: { title: 'Treino de futebol', details: 'Futebol\nToque, técnica e jogo' },
+        run: { title: 'Corrida', details: 'Corrida\nAquecimento, ritmo e alongamento' },
+        swim: { title: 'Natação', details: 'Natação\nÁgua fria escreve a alma' },
         other: {
           title: a.trainingOther.trim() || 'Treino',
-          minutes: 45,
           details: a.trainingOther.trim() || 'Sessão de treino',
         },
-        gym: { title: 'Treino', minutes: 60, details: 'Treino de academia' },
+        gym: { title: 'Treino de academia', details: 'Academia' },
       };
       const s = spec[a.trainingType];
       tasks.push({
         key: 'train-0',
         title: s.title,
         category: 'training',
-        timeMin: a.wakeMin + 600,
+        timeMin: trainTime,
         days: maskOfDayIndexes(daysArr),
-        details: s.details,
-        targetMinutes: s.minutes,
+        details: `${s.details}\nDuração: ${trainDuration} min`,
+        targetMinutes: trainDuration,
       });
     }
   }
@@ -224,27 +311,32 @@ export function buildOnboardingRoutine(a: OnboardAnswers): PendingTask[] {
   }
 
   if (a.study && a.studyFreq) {
+    const studyTime = suggestTime(a.wakeMin, a.studyTime, 240);
+    const subject = a.studySubject.trim();
     tasks.push({
       key: 'study-0',
-      title: a.studySubject.trim() ? `Estudo — ${a.studySubject.trim()}` : 'Estudar',
+      title: subject ? `Estudo — ${subject}` : 'Estudar',
       category: 'study',
-      timeMin: a.wakeMin + 240,
+      timeMin: studyTime,
       days: maskOfDayIndexes(STUDY_DAYS[a.studyFreq]),
-      details: a.studySubject.trim()
-        ? `Sessão de estudo · ${a.studySubject.trim()}\nFoco total, sem telemóvel`
+      details: subject
+        ? `${subject}\nFoco total, sem telemóvel`
         : 'Sessão de estudo\nFoco total, sem telemóvel',
       targetMinutes: a.studyMinutes ?? 50,
     });
   }
 
   if (a.work) {
+    const workName = a.workName.trim() || 'Trabalho';
+    const workStartMin = a.workStartTime ? labelToTimeMin(a.workStartTime) : null;
+    const workTime = workStartMin ?? suggestTime(a.wakeMin, null, 120);
     tasks.push({
       key: 'work-0',
-      title: a.workName.trim() || 'Trabalho',
+      title: workName,
       category: 'work',
-      timeMin: a.wakeMin + 120,
+      timeMin: workTime,
       days: a.workDays === 'all' ? ALL_DAYS_MASK : WORKDAYS_MASK,
-      details: '',
+      details: a.workStartTime ? `Início às ${a.workStartTime}` : '',
       targetMinutes: null,
     });
   }
