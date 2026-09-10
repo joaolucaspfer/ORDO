@@ -14,6 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useSQLiteContext, type SQLiteDatabase } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme, type Theme } from '../theme';
+import { FONT } from '../lib/fonts';
 import { getProfile, upsertProfile } from '../db/profile';
 import type { Profile } from '../db/types';
 import { persistProfilePhoto } from '../lib/profilePhoto';
@@ -40,6 +41,7 @@ import {
 } from '../db/weight';
 import type { WeighIn } from '../db/types';
 import { pad2 } from '../lib/dates';
+import MottoFooter from '../components/MottoFooter';
 
 const WAKE_OPTIONS = [360, 390, 420, 450, 480, 510, 540, 600, 660];
 
@@ -558,6 +560,7 @@ export default function ProfileScreen() {
           resto em Config.
         </Text>
       </View>
+      <MottoFooter />
     </ScrollView>
   );
 }
@@ -637,6 +640,7 @@ const makeStyles = (theme: Theme) =>
       color: theme.text,
       fontSize: 14,
       fontWeight: '700',
+      fontFamily: FONT.semibold,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },

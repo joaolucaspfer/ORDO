@@ -5,5 +5,6 @@ export type RootTabParamList = {
   Perfil: undefined;
   Treinos: undefined;
   Atividades: undefined;
+  Ferramentas: undefined;
   Config: undefined;
 };

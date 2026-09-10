@@ -4,10 +4,12 @@ import { PressableScale as Pressable } from '../components/PressableScale';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme, type Theme } from '../theme';
+import { FONT } from '../lib/fonts';
 import { timeToLabel, WEEKDAYS_SHORT, ALL_DAYS_MASK } from '../lib/dates';
 import { CATEGORY_MAP, emojiForTask, type Category } from '../lib/categories';
 import { tasksOnDay } from '../db/tasks';
 import type { Task } from '../db/types';
+import MottoFooter from '../components/MottoFooter';
 
 const FILTER_CATEGORIES: { key: Category | 'all'; label: string; emoji: string }[] = [
   { key: 'all', label: 'Todas', emoji: '📋' },
@@ -76,6 +78,7 @@ export default function AtividadesScreen() {
         data={Object.keys(grouped)}
         keyExtractor={(k) => k}
         contentContainerStyle={styles.list}
+        ListFooterComponent={<MottoFooter />}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>📭</Text>
@@ -172,7 +175,7 @@ const makeStyles = (theme: Theme) =>
       justifyContent: 'center',
     },
     sectionEmoji: { fontSize: 16 },
-    sectionTitle: { flex: 1, color: theme.text, fontSize: 16, fontWeight: '800' },
+    sectionTitle: { flex: 1, color: theme.text, fontSize: 16, fontWeight: '800', fontFamily: FONT.extrabold },
     sectionCount: { color: theme.subtext, fontSize: 13, fontWeight: '700' },
     taskCard: {
       backgroundColor: theme.card,

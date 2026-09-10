@@ -15,6 +15,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme, type Theme } from '../theme';
+import { FONT } from '../lib/fonts';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   createWorkout,
@@ -26,6 +27,7 @@ import {
 import type { Workout, Profile, WeighIn } from '../db/types';
 import { formatLongDate, todayISO } from '../lib/dates';
 import { getProfile } from '../db/profile';
+import MottoFooter from '../components/MottoFooter';
 import {
   addWeighIn,
   listWeighIns,
@@ -279,6 +281,7 @@ export default function TrainingsScreen() {
             );
           })
         )}
+        <MottoFooter />
       </ScrollView>
 
       <Pressable
@@ -406,6 +409,7 @@ const makeStyles = (theme: Theme) =>
     color: theme.text,
     fontSize: 13,
     fontWeight: '700',
+    fontFamily: FONT.semibold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -501,6 +505,7 @@ const makeStyles = (theme: Theme) =>
     color: theme.text,
     fontSize: 15,
     fontWeight: '800',
+    fontFamily: FONT.extrabold,
     marginTop: 6,
   },
   emptyCard: {
@@ -604,6 +609,7 @@ const makeStyles = (theme: Theme) =>
     color: theme.text,
     fontSize: 18,
     fontWeight: '800',
+    fontFamily: FONT.extrabold,
   },
   modalClose: {
     color: theme.subtext,

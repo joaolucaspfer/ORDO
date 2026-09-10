@@ -16,11 +16,13 @@ import { useSQLiteContext } from 'expo-sqlite';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme, type Theme } from '../theme';
+import { FONT } from '../lib/fonts';
 import { timeToLabel, labelToTimeMin, WEEKDAYS_SHORT, ALL_DAYS_MASK } from '../lib/dates';
 import { CATEGORIES, CATEGORY_MAP, emojiForTask, type Category } from '../lib/categories';
 import type { Task } from '../db/types';
 import { listTasks, createTask, updateTask, deleteTask, getTask } from '../db/tasks';
 import { syncTaskReminder, cancelTaskReminder } from '../lib/notifications';
+import MottoFooter from '../components/MottoFooter';
 
 interface FormState {
   title: string;
@@ -227,6 +229,7 @@ export default function RoutineScreen() {
             </Text>
           </View>
         }
+        ListFooterComponent={<MottoFooter />}
       />
       <Pressable style={styles.fab} onPress={openNew}>
         <Text style={styles.fabText}>+ Nova tarefa</Text>
@@ -507,6 +510,7 @@ const makeStyles = (theme: Theme) =>
     color: theme.text,
     fontSize: 17,
     fontWeight: '700',
+    fontFamily: FONT.bold,
     marginTop: 12,
   },
   emptyText: {
@@ -554,6 +558,7 @@ const makeStyles = (theme: Theme) =>
     color: theme.text,
     fontSize: 18,
     fontWeight: '800',
+    fontFamily: FONT.extrabold,
     marginBottom: 4,
   },
   label: {

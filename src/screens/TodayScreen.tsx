@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useTheme, type Theme } from '../theme';
+import { FONT } from '../lib/fonts';
 import { formatLongDate, todayISO, timeToLabel, greetingForHour } from '../lib/dates';
 import { CATEGORY_MAP, emojiForTask } from '../lib/categories';
 import { COATS, COAT_MAP, type Coat, type Accessory } from '../lib/wardrobe';
@@ -27,6 +28,7 @@ import { focusMinutesOn, addSessionMinutes } from '../db/sessions';
 import { getProfile } from '../db/profile';
 import { addWeighIn, daysSinceLastWeighIn } from '../db/weight';
 import type { RootTabParamList } from '../navigation';
+import MottoFooter from '../components/MottoFooter';
 
 interface TodayData {
   tasks: Task[];
@@ -332,6 +334,8 @@ export default function TodayScreen() {
           )}
         </>
       )}
+
+      <MottoFooter />
     </ScrollView>
   );
 }
@@ -342,7 +346,7 @@ const makeStyles = (theme: Theme) =>
     content: { padding: 16, paddingBottom: 40, gap: 14 },
     topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     topText: { flex: 1 },
-    greeting: { color: theme.text, fontSize: 22, fontWeight: '800' },
+    greeting: { color: theme.text, fontSize: 22, fontWeight: '800', fontFamily: FONT.extrabold },
     greetingBirthday: { color: theme.primary },
     date: { color: theme.subtext, fontSize: 13, marginTop: 2 },
     avatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: theme.primary },
@@ -365,7 +369,7 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: 16,
       paddingBottom: 16,
     },
-    creatureName: { color: theme.text, fontSize: 16, fontWeight: '800', marginTop: 4 },
+    creatureName: { color: theme.text, fontSize: 16, fontWeight: '800', fontFamily: FONT.bold, marginTop: 4 },
     progressTrack: {
       width: '100%',
       height: 8,
@@ -458,7 +462,7 @@ const makeStyles = (theme: Theme) =>
     checkCircleDone: { backgroundColor: theme.primary },
     checkMark: { color: theme.onPrimary, fontSize: 15, fontWeight: '800' },
     sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-    sectionTitle: { color: theme.text, fontSize: 15, fontWeight: '800' },
+    sectionTitle: { color: theme.text, fontSize: 15, fontWeight: '800', fontFamily: FONT.extrabold },
     sectionLink: { color: theme.primary, fontSize: 13, fontWeight: '700' },
     taskList: { gap: 8 },
     quietCard: {

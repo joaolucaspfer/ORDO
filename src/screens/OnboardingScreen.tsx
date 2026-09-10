@@ -48,6 +48,7 @@ import { createTask, getTask } from '../db/tasks';
 import { persistProfilePhoto } from '../lib/profilePhoto';
 import { syncTaskReminder } from '../lib/notifications';
 import { emitCreatureName } from '../lib/creatureEvents';
+import { ORDO_QUOTE, ORDO_QUOTE_AUTHOR, ORDO_QUOTE_NOTE } from '../lib/brand';
 
 const WAKE_OPTIONS = [360, 390, 420, 450, 480, 510, 540, 600, 660];
 
@@ -1174,6 +1175,13 @@ export default function OnboardingScreen({ onDone }: Props) {
             <Text style={styles.introEmoji}>{slide.emoji}</Text>
             <Text style={styles.introTitle}>{slide.title}</Text>
             <Text style={styles.introText}>{slide.text}</Text>
+            {introStage === 0 && (
+              <View style={styles.introQuoteBlock}>
+                <Text style={styles.introQuote}>«{ORDO_QUOTE}»</Text>
+                <Text style={styles.introQuoteAuthor}>— {ORDO_QUOTE_AUTHOR}</Text>
+                <Text style={styles.introQuoteNote}>{ORDO_QUOTE_NOTE}</Text>
+              </View>
+            )}
           </View>
         </ScrollView>
 
@@ -1315,6 +1323,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
     paddingHorizontal: 8,
+  },
+  introQuoteBlock: {
+    marginTop: 22,
+    alignSelf: 'stretch',
+    backgroundColor: theme.cardAlt,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.border,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  introQuote: {
+    color: theme.primary,
+    fontSize: 16,
+    lineHeight: 23,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  introQuoteAuthor: {
+    color: theme.text,
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  introQuoteNote: {
+    color: theme.subtext,
+    fontSize: 12,
+    marginTop: 6,
+    textAlign: 'center',
+    lineHeight: 17,
   },
   welcomeWrap: {
     alignItems: 'center',

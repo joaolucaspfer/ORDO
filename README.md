@@ -1,30 +1,39 @@
 # Ordo 🐶
 
-> *Um dia bonito começa com uma manhã guardada.*
+> *«A ordem dará à tua vida uma harmonia perfeita»* — S. Josemaría Escrivá
 
-O **Ordo** é uma app de rotina diária (feita em português, sem servidor) que te ajuda a guardar o teu dia — oração, estudo, trabalho, treino — acompanhado por um cão chamado **Ordo** que vive da tua constância: cumprir tarefas dá-lhe energia, XP e moedas, e ele cresce contigo.
+**Ordo** é uma app de rotina diária feita em português, para quem quer pôr ordem na vida: oração, estudo, trabalho, treino e tudo o resto, cada coisa ao seu tempo.
 
-Tudo fica guardado **apenas no teu telemóvel** (SQLite local).
+O nome vem do latim *ordo* — "ordem" — e nasce da frase de S. Josemaría Escrivá que abre este documento. A tua rotina ganha um companheiro fiel: um cão chamado **Ordo** que vive da tua constância. Cumpre as tuas tarefas e ele cresce, ganha energia, pontos e novidade (até ao nome!) — um pequeno incentivo para não deixares o dia escapar.
 
----
+## Porquê o Ordo
+
+- **Uma rotina guiada** — montas os teus dias uma vez e o Ordo lembra-te do que vem a seguir, na altura certa.
+- **Notificações lembram-te** — cada tarefa pode avisar-te antes da hora, para não falhar nem um compromisso.
+- **Cada coisa ao seu tempo** — oração e treino, estudo e trabalho, descanso e vida: a ordem certa dá harmonia ao dia.
+- **Os teus dados são teus** — tudo fica guardado *apenas no teu telemóvel*, sem servidores, sem contas, sem publicidade.
+- **Um cão que cresce contigo** — o Ordo acompanha cada conquista e anima-te quando falhas, dando à rotina um rosto (e um rabinho).
 
 ## Funcionalidades
 
-- **Onboarding que monta a tua rotina** — perfil (nome, foto, aniversário, hora de acordar), treino, orações, estudo, trabalho e objetivo de peso. Cada resposta vira tarefas com hora, duração e dias da semana sugeridos.
-- **Página inicial (Hoje)** — saudação (e «Feliz aniversário 🎂» no teu dia) + a *próxima tarefa* em destaque e as seguintes, com botão de concluir e temporizador de foco (▶) para tarefas com duração.
-- **Rotina** — lista e edição de tarefas (categoria, dias da semana, hora, passos, meta de minutos) e **lembretes por tarefa**: se queres notificação e quanto tempo antes (5/15/30/60 min).
-- **Treinos** — diário de treinos ao estilo Strava (tipo, duração, notas) **+ acompanhamento de peso** (objetivo, progresso, registo diário e histórico).
-- **Perfil** — dados pessoais, foto, hora de acordar, **objetivo de peso** com barra de progresso, históricos de pesagem, números da tua rotina e lembretes de pesagem.
-- **Criatura** — o cão (SVG animado) com nome (predefinido **Ordo**, alterável), energia, nível, moedas, cor do pelo e lojinha de acessórios.
-- **Configurações (⚙️ no canto superior direito)** — tema **escuro/claro**, teste de notificações, atalhos, **repor onboarding** (voltar a entrar como primeira vez) e limpar histórico.
+- Onboarding que monta a tua rotina numa conversa rápida: acordar, treino, oração, estudo, trabalho e objetivos.
+- Página **Hoje** com a tua próxima tarefa em destaque e a sequência do dia.
+- Gestão completa da **Rotina**: tarefas, dias da semana, horas, durações e lembretes por tarefa.
+- Diário de **Treinos** e acompanhamento de **peso**.
+- Perfil pessoal com dados, objetivos e estatísticas da tua constância.
+- A tua **Criatura**: nome, energia, nível, moedas e lojinha de acessórios.
+- Modo **escuro** e modo **claro**, ferramentas de foco e respiração.
+- 100% em **português**.
 
 ## Tecnologias
 
-- [Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/) · React Native 0.86 · React 19 · TypeScript (strict)
+Construído com **Expo SDK 57** e **React Native**, em TypeScript — um ecossistema que dá apoio à app de rotina dentro do telemóvel, de Android a iOS.
+
+- [Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/) · React Native 0.86 · React 19 · TypeScript strict
 - `expo-sqlite` — base de dados local (sem backend)
-- `react-native-svg` — desenho do cão (`DachshundView`)
-- React Navigation (bottom tabs)
-- `expo-notifications` — lembretes com aviso prévio
+- `react-native-svg` — o desenho do cão
+- React Navigation — navegação em abas
+- `expo-notifications` — lembretes das tarefas
 
 ## Como correr
 
@@ -34,39 +43,14 @@ npm install
 npx expo start --tunnel   # ou: npx expo start
 ```
 
-Escaneia o QR code com o Expo Go (ou com os telemóveis na mesma rede via `--tunnel`, se o telemóvel estiver noutra rede).
+Escaneia o QR code com o **Expo Go** (ou usa `npx expo start` se o telemóvel estiver na mesma rede).
 
-> **Nota (notificações):** no **Expo Go (Android)** as notificações não funcionam (limitação do Expo SDK). A app abre normalmente, mas os lembretes só funcionam numa **development build** (`eas build --profile development`).
+> **Nota:** no Expo Go (Android) as notificações não funcionam — limitação do SDK. Numa build de desenvolvimento (`eas build --profile development`) os lembretes ficam ativos.
 
-## Estrutura
+## Privacidade
 
-```
-App.tsx                    # Raiz: provider do tema, navegação (5 abas + Config no topo), onboarding
-src/
-  screens/                 # Hoje, Rotina, Treinos, Perfil, Criatura, Configurações, Onboarding
-  components/              # DachshundView (o cão)
-  db/                      # migrations + acesso aos dados (tasks, profile, weight, workouts, creator, streak…)
-  lib/                     # helpers (datas, categorias, onboarding/builder de rotina, notificações, reset)
-  theme.tsx                # paletas escura/clara + ThemeProvider/useTheme
-  navigation.ts            # parâmetros das rotas
-```
+O Ordo não tem servidor, não pede conta e não recolhe dados. A base de dados (`ordo.db`) vive só no teu dispositivo e pode ser apagada em qualquer altura a partir das definições da app.
 
-## Dados
+---
 
-Base local `ordo.db`, migrada automaticamente na abertura (`src/db/migrations.ts`):
-
-- `tasks`, `checkins`, `sessions`, `bonus`
-- `profile` (nome, foto, aniversário, hora de acordar, objetivo de peso…)
-- `creature`, `owned`, `wardrobe`
-- `workouts`, `weigh_ins`
-- `settings` (ex.: tema)
-
-## Como testar o onboarding do zero
-
-Configurações → **«Repor onboarding (primeira vez)»** — apaga perfil, tarefas e criatura e volta às perguntas iniciais (com a introdução).
-
-## Roadmap / ideias
-
-- Fazer build de desenvolvimento para ativar notificações no Android
-- Arte final do cão (o desenho atual é uma ilustração SVG temporária)
-- Backup/exportação dos dados
+Feito com entusiasmo para dar ordem aos dias. 🐶

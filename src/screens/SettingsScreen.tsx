@@ -10,10 +10,14 @@ import { PressableScale as Pressable } from '../components/PressableScale';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme, type Theme } from '../theme';
+import { FONT } from '../lib/fonts';
+import Logo from '../components/Logo';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { RootTabParamList } from '../navigation';
 import { testNotification } from '../lib/notifications';
+import { ORDO_QUOTE, ORDO_QUOTE_AUTHOR, ORDO_QUOTE_NOTE } from '../lib/brand';
+import MottoFooter from '../components/MottoFooter';
 import { resetAllData, clearHistory, emitAppReset } from '../lib/appReset';
 
 export default function SettingsScreen() {
@@ -148,11 +152,19 @@ export default function SettingsScreen() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>ℹ️ Sobre</Text>
+        <View style={styles.aboutRow}>
+          <Logo size={26} />
+          <Text style={styles.aboutName}>Ordo</Text>
+        </View>
         <Text style={styles.hint}>
-          Ordo · a tua rotina com o teu cão. Um dia bonito começa com uma manhã guardada.
+          A tua rotina com o teu cão. Um dia bonito começa com uma manhã guardada.
         </Text>
-        <Text style={styles.version}>Versão 1.0.0</Text>
+        <Text style={styles.quote}>«{ORDO_QUOTE}»</Text>
+        <Text style={styles.quoteAuthor}>— {ORDO_QUOTE_AUTHOR}</Text>
+        <Text style={styles.quoteNote}>{ORDO_QUOTE_NOTE}</Text>
+        <Text style={styles.version}>Versão 1.1.2</Text>
       </View>
+      <MottoFooter />
     </ScrollView>
   );
 }
@@ -172,6 +184,7 @@ const makeStyles = (theme: Theme) =>
       color: theme.text,
       fontSize: 14,
       fontWeight: '700',
+      fontFamily: FONT.semibold,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },
@@ -219,4 +232,9 @@ const makeStyles = (theme: Theme) =>
     },
     dangerButtonText: { color: theme.danger, fontSize: 14, fontWeight: '700' },
     version: { color: theme.subtext, fontSize: 12, marginTop: 8 },
+    quote: { color: theme.primary, fontSize: 14, lineHeight: 20, fontWeight: '700', marginTop: 14 },
+    quoteAuthor: { color: theme.text, fontSize: 12, fontWeight: '700', marginTop: 6 },
+    quoteNote: { color: theme.subtext, fontSize: 12, marginTop: 6, lineHeight: 17 },
+    aboutRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+    aboutName: { color: theme.text, fontSize: 18, fontWeight: '800', fontFamily: FONT.extrabold, letterSpacing: -0.3 },
   });

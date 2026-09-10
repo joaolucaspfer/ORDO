@@ -11,7 +11,9 @@ import { PressableScale as Pressable } from '../components/PressableScale';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme, type Theme } from '../theme';
+import { FONT } from '../lib/fonts';
 import DachshundView from '../components/DachshundView';
+import Logo from '../components/Logo';
 import { levelForXp, moodForEnergy, MAX_ENERGY } from '../creature/stages';
 import {
   getCreature,
@@ -25,6 +27,7 @@ import {
   unequipAccessory,
   ENERGY_DECAY_PER_DAY,
 } from '../db/creature';
+import MottoFooter from '../components/MottoFooter';
 import { getStats, type Stats } from '../db/streak';
 import { ACCESSORIES, COATS, type Accessory } from '../lib/wardrobe';
 import { emitCreatureName } from '../lib/creatureEvents';
@@ -134,7 +137,10 @@ export default function CreatureScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.creatureCard}>
         <DachshundView coatColor={coat.color} energy={data.energy} equipped={data.equipped} />
-        <Text style={styles.creatureName}>{data.name}</Text>
+        <View style={styles.creatureNameRow}>
+          <Logo size={16} />
+          <Text style={styles.creatureName}>{data.name}</Text>
+        </View>
         <Text style={styles.moodText}>{moodText}</Text>
         <View style={styles.coinChip}>
           <Text style={styles.coinText}>🪙 {data.coins} moedas</Text>
@@ -273,6 +279,7 @@ export default function CreatureScreen() {
           })}
         </View>
       </View>
+      <MottoFooter />
     </ScrollView>
   );
 }
@@ -301,6 +308,14 @@ const makeStyles = (theme: Theme) =>
     color: theme.text,
     fontSize: 20,
     fontWeight: '800',
+    fontFamily: FONT.extrabold,
+  },
+  creatureNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 8,
   },
   moodText: {
     color: theme.subtext,
@@ -356,6 +371,7 @@ const makeStyles = (theme: Theme) =>
     color: theme.text,
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: FONT.semibold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
