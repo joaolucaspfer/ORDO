@@ -1,20 +1,35 @@
-import { File, Paths } from 'expo-file-system';
+import { File, Paths, Directory } from 'expo-file-system';
 
-const PHOTO_NAME = 'profile_photo';
+const PHOTO_PREFIX = 'profile_photo';
+
+export async function clearProfilePhotos(): Promise<void> {
+  try {
+    const dir = new Directory(Paths.document);
+    if (!dir.exists) {
+      return;
+    }
+    const contents = dir.list();
+    for (const item of contents) {
+      if (item instanceof File && item.name.startsWith(PHOTO_PREFIX)) {
+        item.delete();
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
 
 export async function persistProfilePhoto(sourceUri: string): Promise<string | null> {
   try {
     const ext = (sourceUri.split('.').pop() ?? '').split('?')[0].toLowerCase();
     const safeExt = /^[a-z0-9]{1,5}$/.test(ext) ? ext : 'jpg';
-    const dest = new File(Paths.document, `${PHOTO_NAME}.${safeExt}`);
-    if (dest.exists) {
-      dest.delete();
-    }
     const src = new File(sourceUri);
     if (!src.exists) {
       return null;
     }
-    src.copy(dest);
+    await clearProfilePhotos();
+    const dest = new File(Paths.document, `${PHOTO_PREFIX}_${Date.now()}.${safeExt}`);
+    await src.copy(dest);
     return dest.uri;
   } catch {
     return null;

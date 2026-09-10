@@ -1,4 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
+import { clearProfilePhotos } from './profilePhoto';
 
 type ResetListener = () => void;
 const listeners = new Set<ResetListener>();
@@ -15,6 +16,7 @@ export function emitAppReset(): void {
 }
 
 export async function resetAllData(db: SQLiteDatabase): Promise<void> {
+  await clearProfilePhotos();
   await db.execAsync(
     `DELETE FROM profile;
      DELETE FROM tasks;

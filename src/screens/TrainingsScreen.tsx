@@ -4,14 +4,15 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { PressableScale as Pressable } from '../components/PressableScale';
 import { useSQLiteContext } from 'expo-sqlite';
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme, type Theme } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -89,6 +90,7 @@ export default function TrainingsScreen() {
   );
 
   const openForm = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setTitle('');
     setKind('gym');
     setDate(todayISO());
@@ -480,7 +482,7 @@ const makeStyles = (theme: Theme) =>
     paddingHorizontal: 16,
     paddingVertical: 11,
   },
-  weightSaveButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  weightSaveButtonText: { color: theme.onPrimary, fontSize: 14, fontWeight: '800' },
   weightHistory: { marginTop: 6 },
   weightRow: {
     flexDirection: 'row',
@@ -575,7 +577,7 @@ const makeStyles = (theme: Theme) =>
     elevation: 6,
   },
   fabText: {
-    color: '#0C1A10',
+    color: theme.onPrimary,
     fontSize: 30,
     fontWeight: '800',
     lineHeight: 34,
@@ -587,8 +589,8 @@ const makeStyles = (theme: Theme) =>
   },
   modalCard: {
     backgroundColor: theme.card,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 18,
     maxHeight: '88%',
   },
@@ -660,7 +662,7 @@ const makeStyles = (theme: Theme) =>
     fontWeight: '600',
   },
   chipTextActive: {
-    color: '#0C1A10',
+    color: theme.onPrimary,
     fontWeight: '800',
   },
   saveButton: {
@@ -671,7 +673,7 @@ const makeStyles = (theme: Theme) =>
     marginTop: 20,
   },
   saveButtonText: {
-    color: '#0C1A10',
+    color: theme.onPrimary,
     fontSize: 16,
     fontWeight: '800',
   },

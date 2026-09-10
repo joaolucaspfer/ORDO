@@ -3,31 +3,37 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { getSetting, setSetting } from './db/settings';
 
 export const darkPalette = {
-  bg: '#0F1E14',
-  card: '#16291C',
-  cardAlt: '#1E3723',
-  border: '#2A452F',
-  text: '#EAF4EC',
-  subtext: '#8FA795',
-  primary: '#55D66B',
-  primaryDark: '#2F8F47',
-  primarySoft: '#2A4632',
+  bg: '#0B1A10',
+  card: '#132419',
+  cardAlt: '#1B3022',
+  border: '#253D2B',
+  text: '#E8F5EC',
+  subtext: '#8CA894',
+  primary: '#4ADE68',
+  primaryDark: '#2D8A43',
+  primarySoft: '#1E3A28',
+  onPrimary: '#0C1A10',
   danger: '#E4695B',
+  dangerSoft: 'rgba(228,105,91,0.15)',
+  dangerBorder: 'rgba(228,105,91,0.45)',
   warn: '#E7B84B',
   white: '#FFFFFF',
 } as const;
 
 export const lightPalette = {
-  bg: '#F3F7F2',
+  bg: '#F0F6EF',
   card: '#FFFFFF',
-  cardAlt: '#E9F0E7',
-  border: '#CFDCCB',
-  text: '#16221A',
-  subtext: '#5E7264',
-  primary: '#2F8F47',
+  cardAlt: '#E5F0E3',
+  border: '#C8D9C5',
+  text: '#14201A',
+  subtext: '#5A7060',
+  primary: '#2D8A43',
   primaryDark: '#1E6B32',
-  primarySoft: '#D9F0DC',
+  primarySoft: '#D4EDCF',
+  onPrimary: '#FFFFFF',
   danger: '#C94A3C',
+  dangerSoft: 'rgba(201,74,60,0.12)',
+  dangerBorder: 'rgba(201,74,60,0.45)',
   warn: '#B8810F',
   white: '#FFFFFF',
 } as const;
@@ -42,7 +48,10 @@ export interface Theme {
   primary: string;
   primaryDark: string;
   primarySoft: string;
+  onPrimary: string;
   danger: string;
+  dangerSoft: string;
+  dangerBorder: string;
   warn: string;
   white: string;
 }

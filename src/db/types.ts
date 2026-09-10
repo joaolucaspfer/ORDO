@@ -4,6 +4,7 @@ export interface Task {
   id: number;
   title: string;
   category: Category;
+  emoji: string | null;
   time_min: number | null;
   days: number;
   details: string;
@@ -27,6 +28,8 @@ export interface Profile {
   goal_enabled: number;
   goal_start_kg: number | null;
   goal_target_kg: number | null;
+  weight_freq: number | null;
+  gender: string | null;
   created_at: string;
 }
 

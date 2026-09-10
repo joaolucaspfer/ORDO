@@ -2,18 +2,20 @@ import React, { useCallback, useState } from 'react';
 import {
   Alert,
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
+import { PressableScale as Pressable } from '../components/PressableScale';
 import { useSQLiteContext } from 'expo-sqlite';
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useTheme, type Theme } from '../theme';
 import { formatLongDate, todayISO, timeToLabel, greetingForHour } from '../lib/dates';
-import { CATEGORY_MAP } from '../lib/categories';
+import { CATEGORY_MAP, emojiForTask } from '../lib/categories';
 import { COATS, COAT_MAP, type Coat, type Accessory } from '../lib/wardrobe';
 import DachshundView from '../components/DachshundView';
 import type { Task, Profile, CreatureRow } from '../db/types';
@@ -23,6 +25,7 @@ import { refreshCreature, getCreature, getEquipped } from '../db/creature';
 import { getStats, type Stats } from '../db/streak';
 import { focusMinutesOn, addSessionMinutes } from '../db/sessions';
 import { getProfile } from '../db/profile';
+import { addWeighIn, daysSinceLastWeighIn } from '../db/weight';
 import type { RootTabParamList } from '../navigation';
 
 interface TodayData {
@@ -33,6 +36,7 @@ interface TodayData {
   profile: Profile | null;
   focusMin: number;
   equipped: Record<string, Accessory>;
+  lastSinceDays: number | null;
 }
 
 interface RunningTimer {
@@ -59,18 +63,20 @@ export default function TodayScreen() {
   const [busy, setBusy] = useState(false);
   const [running, setRunning] = useState<RunningTimer | null>(null);
   const [tick, setTick] = useState(0);
+  const [weightNew, setWeightNew] = useState('');
 
   const reload = useCallback(async () => {
     const creature = await refreshCreature(db, await getCreature(db));
-    const [tasks, doneIds, stats, profile, focusMin, equipped] = await Promise.all([
+    const [tasks, doneIds, stats, profile, focusMin, equipped, lastSinceDays] = await Promise.all([
       tasksOnDay(db, new Date().getDay()),
       checkinIdsForDate(db, today),
       getStats(db, today),
       getProfile(db),
       focusMinutesOn(db, today),
       getEquipped(db),
+      daysSinceLastWeighIn(db),
     ]);
-    setData({ tasks, done: new Set(doneIds), stats, creature, profile, focusMin, equipped });
+    setData({ tasks, done: new Set(doneIds), stats, creature, profile, focusMin, equipped, lastSinceDays });
   }, [db, today]);
 
   useFocusEffect(
@@ -87,6 +93,7 @@ export default function TodayScreen() {
 
   const onToggle = async (task: Task) => {
     if (busy) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setBusy(true);
     try {
       await toggleCheckin(db, task.id, today, CATEGORY_MAP[task.category].xp);
@@ -119,11 +126,24 @@ export default function TodayScreen() {
     }
   };
 
+  const saveWeightNow = async () => {
+    const kg = Number(weightNew.trim().replace(',', '.'));
+    if (!Number.isFinite(kg) || kg <= 0) {
+      Alert.alert('Valor inválido', 'Escreve o teu peso em kg, ex.: 72,5');
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await addWeighIn(db, kg);
+    setWeightNew('');
+    await reload();
+    Alert.alert('Registado 📈', `Peso atual: ${Number(kg.toFixed(1))} kg.`);
+  };
+
   if (!data) {
     return <View style={styles.container} />;
   }
 
-  const { tasks, done, stats, creature, profile, focusMin, equipped } = data;
+  const { tasks, done, stats, creature, profile, focusMin, equipped, lastSinceDays } = data;
   const progress = stats.totalToday === 0 ? 0 : stats.doneToday / stats.totalToday;
   const coat = creature.coat ? COAT_MAP[creature.coat] ?? DEFAULT_COAT : DEFAULT_COAT;
   const firstName = profile?.name?.split(' ')[0] ?? 'amigo';
@@ -145,6 +165,12 @@ export default function TodayScreen() {
   const first = next[0] ?? null;
   const rest = next.slice(1);
 
+  const weightDue =
+    profile != null &&
+    profile.goal_enabled === 1 &&
+    profile.weight_freq != null &&
+    (lastSinceDays == null || lastSinceDays >= profile.weight_freq);
+
   const renderRow = (task: Task, big: boolean) => {
     const info = CATEGORY_MAP[task.category];
     const isDone = done.has(task.id);
@@ -164,7 +190,7 @@ export default function TodayScreen() {
           </View>
         )}
         <View style={[styles.taskIcon, { backgroundColor: `${info.color}22` }]}>
-          <Text style={styles.taskEmoji}>{info.emoji}</Text>
+          <Text style={styles.taskEmoji}>{emojiForTask(task.category, task.emoji)}</Text>
         </View>
         <View style={styles.taskBody}>
           <Text style={[styles.taskTitle, big && styles.taskTitleBig, isDone && styles.taskTitleDone]} numberOfLines={1}>
@@ -195,18 +221,27 @@ export default function TodayScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+    >
       <View style={styles.topRow}>
         <View style={styles.topText}>
           <Text style={[styles.greeting, isBirthday && styles.greetingBirthday]}>{greeting}</Text>
           <Text style={styles.date}>{formatLongDate(today)}</Text>
         </View>
         {profile?.photo_uri ? (
-          <Image source={{ uri: profile.photo_uri }} style={styles.avatar} />
+          <Pressable onPress={() => navigation.navigate('Perfil')}>
+            <Image source={{ uri: profile.photo_uri }} style={styles.avatar} />
+          </Pressable>
         ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarInitial}>{firstName.charAt(0).toUpperCase()}</Text>
-          </View>
+          <Pressable onPress={() => navigation.navigate('Perfil')}>
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarInitial}>{firstName.charAt(0).toUpperCase()}</Text>
+            </View>
+          </Pressable>
         )}
       </View>
 
@@ -232,6 +267,32 @@ export default function TodayScreen() {
           </View>
         </View>
       </View>
+
+      {weightDue && (
+        <View style={styles.weightCard}>
+          <View style={styles.weightHeader}>
+            <Text style={styles.weightTitle}>⚖️ Registar o peso</Text>
+            <Text style={styles.weightInfo}>
+              {lastSinceDays == null
+                ? 'Primeira pesagem do teu objetivo.'
+                : `Última pesagem há ${lastSinceDays} dia${lastSinceDays === 1 ? '' : 's'}.`}
+            </Text>
+          </View>
+          <View style={styles.weightRow}>
+            <TextInput
+              style={styles.weightInput}
+              value={weightNew}
+              onChangeText={setWeightNew}
+              placeholder="Peso em kg"
+              placeholderTextColor={theme.subtext}
+              keyboardType="decimal-pad"
+            />
+            <Pressable style={styles.weightButton} onPress={saveWeightNow}>
+              <Text style={styles.weightButtonText}>Guardar</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
 
       {next.length === 0 ? (
         <View style={styles.emptyCard}>
@@ -293,10 +354,10 @@ const makeStyles = (theme: Theme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    avatarInitial: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
+    avatarInitial: { color: theme.white, fontSize: 18, fontWeight: '800' },
     dogCard: {
       backgroundColor: theme.card,
-      borderRadius: 20,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: theme.border,
       alignItems: 'center',
@@ -315,8 +376,37 @@ const makeStyles = (theme: Theme) =>
     },
     progressFill: { height: '100%', borderRadius: 4, backgroundColor: theme.primary },
     chipRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
-    chip: { backgroundColor: theme.primarySoft, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
+    chip: { backgroundColor: theme.primarySoft, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 6 },
     chipText: { color: theme.primary, fontSize: 12, fontWeight: '700' },
+    weightCard: {
+      backgroundColor: theme.primarySoft,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.primary,
+      padding: 14,
+    },
+    weightHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+    weightTitle: { color: theme.text, fontSize: 14, fontWeight: '800' },
+    weightInfo: { color: theme.subtext, fontSize: 12, flexShrink: 1, textAlign: 'right' },
+    weightRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
+    weightInput: {
+      flex: 1,
+      backgroundColor: theme.card,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.border,
+      color: theme.text,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 15,
+    },
+    weightButton: {
+      backgroundColor: theme.primary,
+      borderRadius: 10,
+      paddingHorizontal: 16,
+      justifyContent: 'center',
+    },
+    weightButtonText: { color: theme.onPrimary, fontSize: 14, fontWeight: '800' },
     taskRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -328,7 +418,7 @@ const makeStyles = (theme: Theme) =>
       padding: 12,
     },
     taskRowBig: {
-      borderRadius: 20,
+      borderRadius: 16,
       padding: 16,
       borderColor: theme.primaryDark,
       backgroundColor: theme.card,
@@ -366,7 +456,7 @@ const makeStyles = (theme: Theme) =>
       justifyContent: 'center',
     },
     checkCircleDone: { backgroundColor: theme.primary },
-    checkMark: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+    checkMark: { color: theme.onPrimary, fontSize: 15, fontWeight: '800' },
     sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
     sectionTitle: { color: theme.text, fontSize: 15, fontWeight: '800' },
     sectionLink: { color: theme.primary, fontSize: 13, fontWeight: '700' },
@@ -382,7 +472,7 @@ const makeStyles = (theme: Theme) =>
     quietText: { color: theme.subtext, fontSize: 13, textAlign: 'center', lineHeight: 18 },
     emptyCard: {
       backgroundColor: theme.card,
-      borderRadius: 18,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: theme.border,
       padding: 28,
@@ -398,5 +488,5 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: 13,
       marginTop: 16,
     },
-    primaryButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+    primaryButtonText: { color: theme.onPrimary, fontSize: 15, fontWeight: '800' },
   });

@@ -11,6 +11,11 @@ export interface OnboardAnswers {
   birthDay: string;
   birthMonth: string;
   birthYear: string;
+  gender: string | null;
+  heightCm: string;
+  goalEnabled: boolean;
+  goalStartKg: string;
+  goalTargetKg: string;
   dogName: string;
   training: boolean;
   trainingFreq: number | null;
@@ -30,16 +35,63 @@ export interface OnboardAnswers {
   workName: string;
   workDays: 'all' | 'weekdays' | null;
   workStartTime: string;
+  weightFreq: number | null;
+  notifEnabled: boolean | null;
+  notifBefore: number;
+}
+
+export interface CustomTaskDraft {
+  key: string;
+  title: string;
+  emoji: string;
+  timeLabel: string;
+  days: number;
+  targetMinutes: number | null;
 }
 
 export interface PendingTask {
   key: string;
   title: string;
   category: Category;
+  emoji?: string | null;
   timeMin: number;
   days: number;
   details: string;
   targetMinutes: number | null;
+}
+
+export const NOTIF_BEFORE_OPTIONS: { value: number; label: string }[] = [
+  { value: 5, label: '5 min' },
+  { value: 15, label: '15 min' },
+  { value: 30, label: '30 min' },
+  { value: 60, label: '1 hora' },
+];
+
+export const WEIGHT_FREQ_OPTIONS: { value: number; label: string; hint: string }[] = [
+  { value: 1, label: 'Todos os dias', hint: 'Diário' },
+  { value: 7, label: '1x por semana', hint: 'Semanal' },
+  { value: 14, label: '2 em 2 semanas', hint: 'Quinzenal' },
+  { value: 30, label: '1x por mês', hint: 'Mensal' },
+];
+
+export const CUSTOM_EMOJI_OPTIONS = [
+  '📖', '🌅', '💧', '🧹', '🛌', '🍳', '📝', '🎨',
+  '🤸', '👨‍👩‍👧', '🌳', '🐱', '🎻', '👯', '🧺', '🖥️',
+];
+
+export function buildCustomTasks(drafts: CustomTaskDraft[]): PendingTask[] {
+  return drafts
+    .filter((d) => d.title.trim().length > 0)
+    .map((d) => ({
+      key: d.key,
+      title: d.title.trim(),
+      category: 'other' as Category,
+      emoji: d.emoji.trim() || null,
+      timeMin: labelToTimeMin(d.timeLabel) ?? 0,
+      days: d.days,
+      details: '',
+      targetMinutes: d.targetMinutes,
+    }));
 }
 
 export const TRAINING_FREQ_OPTIONS: { value: number; label: string; hint: string }[] = [

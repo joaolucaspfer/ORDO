@@ -24,6 +24,10 @@ export const CATEGORY_MAP: Record<Category, CategoryInfo> = {
   other: CATEGORIES[4],
 };
 
+export function emojiForTask(category: Category, customEmoji: string | null | undefined): string {
+  return customEmoji && customEmoji.trim() ? customEmoji : CATEGORY_MAP[category].emoji;
+}
+
 export const PERFECT_DAY_BONUS_XP = 20;
 export const PERFECT_DAY_BONUS_COINS = 15;
 export const COINS_PER_CHECKIN = 5;

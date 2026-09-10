@@ -1,12 +1,12 @@
 import React, { useCallback, useState } from 'react';
 import {
   Alert,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { PressableScale as Pressable } from '../components/PressableScale';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme, type Theme } from '../theme';
@@ -188,7 +188,7 @@ const makeStyles = (theme: Theme) =>
     },
     segActive: { backgroundColor: theme.primary, borderColor: theme.primary },
     segText: { color: theme.subtext, fontSize: 14, fontWeight: '700' },
-    segTextActive: { color: '#FFFFFF' },
+    segTextActive: { color: theme.onPrimary },
     primaryButton: {
       backgroundColor: theme.primary,
       borderRadius: 12,
@@ -196,7 +196,7 @@ const makeStyles = (theme: Theme) =>
       alignItems: 'center',
       marginTop: 12,
     },
-    primaryButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+    primaryButtonText: { color: theme.onPrimary, fontSize: 15, fontWeight: '800' },
     linkRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
     linkButton: {
       borderWidth: 1,
@@ -210,8 +210,8 @@ const makeStyles = (theme: Theme) =>
     linkButtonText: { color: theme.primary, fontSize: 13, fontWeight: '700' },
     dangerButton: {
       borderWidth: 1,
-      borderColor: 'rgba(228,105,91,0.5)',
-      backgroundColor: 'rgba(228,105,91,0.1)',
+      borderColor: theme.dangerBorder,
+      backgroundColor: theme.dangerSoft,
       borderRadius: 12,
       paddingVertical: 12,
       alignItems: 'center',

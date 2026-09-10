@@ -4,18 +4,20 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { PressableScale as Pressable } from '../components/PressableScale';
+import TimeInput from '../components/TimeInput';
 import { useSQLiteContext } from 'expo-sqlite';
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme, type Theme } from '../theme';
 import { timeToLabel, labelToTimeMin, WEEKDAYS_SHORT, ALL_DAYS_MASK } from '../lib/dates';
-import { CATEGORIES, CATEGORY_MAP, type Category } from '../lib/categories';
+import { CATEGORIES, CATEGORY_MAP, emojiForTask, type Category } from '../lib/categories';
 import type { Task } from '../db/types';
 import { listTasks, createTask, updateTask, deleteTask, getTask } from '../db/tasks';
 import { syncTaskReminder, cancelTaskReminder } from '../lib/notifications';
@@ -23,6 +25,7 @@ import { syncTaskReminder, cancelTaskReminder } from '../lib/notifications';
 interface FormState {
   title: string;
   category: Category;
+  emoji: string;
   timeLabel: string;
   days: number;
   details: string;
@@ -50,6 +53,7 @@ const MINUTES_LABEL: Record<Category, string> = {
 const DEFAULT_FORM: FormState = {
   title: '',
   category: 'prayer',
+  emoji: '',
   timeLabel: '',
   days: ALL_DAYS_MASK,
   details: '',
@@ -81,6 +85,7 @@ export default function RoutineScreen() {
   );
 
   const openNew = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEditingId(null);
     setForm(DEFAULT_FORM);
     setTimeError(false);
@@ -92,6 +97,7 @@ export default function RoutineScreen() {
     setForm({
       title: task.title,
       category: task.category,
+      emoji: task.emoji ?? '',
       timeLabel: task.time_min != null ? timeToLabel(task.time_min) : '',
       days: task.days,
       details: task.details ?? '',
@@ -121,6 +127,7 @@ export default function RoutineScreen() {
     const input = {
       title,
       category: form.category,
+      emoji: form.emoji.trim() || null,
       time_min: timeMin,
       days: form.days,
       details: form.details.trim(),
@@ -174,7 +181,7 @@ export default function RoutineScreen() {
     return (
       <View style={styles.taskCard}>
         <View style={[styles.taskIcon, { backgroundColor: `${info.color}22` }]}>
-          <Text style={styles.taskEmoji}>{info.emoji}</Text>
+          <Text style={styles.taskEmoji}>{emojiForTask(item.category, item.emoji)}</Text>
         </View>
         <View style={styles.taskBody}>
           <Text style={styles.taskTitle} numberOfLines={1}>
@@ -273,6 +280,19 @@ export default function RoutineScreen() {
                 })}
               </View>
 
+              <Text style={styles.label}>Ícone (emoji) — opcional</Text>
+              <TextInput
+                style={styles.input}
+                placeholder={`Deixa vazio para usar ${CATEGORY_MAP[form.category].emoji}`}
+                placeholderTextColor={theme.subtext}
+                value={form.emoji}
+                onChangeText={(emoji) => setForm((f) => ({ ...f, emoji }))}
+                maxLength={4}
+              />
+              <Text style={styles.hint}>
+                Podes escolher qualquer emoji para representar esta tarefa.
+              </Text>
+
               <Text style={styles.label}>{MINUTES_LABEL[form.category]}</Text>
               <TextInput
                 style={styles.input}
@@ -297,13 +317,12 @@ export default function RoutineScreen() {
               />
 
               <Text style={styles.label}>Hora do lembrete (opcional)</Text>
-              <TextInput
+              <TimeInput
                 style={styles.input}
                 placeholder="HH:MM — deixa vazio para qualquer hora"
                 placeholderTextColor={theme.subtext}
                 value={form.timeLabel}
-                onChangeText={(timeLabel) => setForm((f) => ({ ...f, timeLabel }))}
-                keyboardType="numbers-and-punctuation"
+                onChange={(label) => setForm((f) => ({ ...f, timeLabel: label }))}
               />
               {timeError && <Text style={styles.errorText}>Hora inválida. Usa o formato HH:MM.</Text>}
 
@@ -464,7 +483,7 @@ const makeStyles = (theme: Theme) =>
   },
   smallButton: {
     backgroundColor: theme.primarySoft,
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
@@ -511,7 +530,7 @@ const makeStyles = (theme: Theme) =>
     elevation: 5,
   },
   fabText: {
-    color: '#0C1A10',
+    color: theme.onPrimary,
     fontSize: 15,
     fontWeight: '800',
   },
@@ -574,7 +593,7 @@ const makeStyles = (theme: Theme) =>
     borderWidth: 1,
     borderColor: theme.border,
     backgroundColor: theme.cardAlt,
-    borderRadius: 20,
+    borderRadius: 18,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
@@ -590,7 +609,7 @@ const makeStyles = (theme: Theme) =>
   dayChip: {
     borderWidth: 1,
     borderColor: theme.border,
-    borderRadius: 10,
+    borderRadius: 18,
     paddingHorizontal: 9,
     paddingVertical: 7,
     backgroundColor: theme.cardAlt,
@@ -605,7 +624,7 @@ const makeStyles = (theme: Theme) =>
     fontWeight: '600',
   },
   dayChipTextActive: {
-    color: '#0C1A10',
+    color: theme.onPrimary,
   },
   reminderRow: {
     flexDirection: 'row',
@@ -617,7 +636,7 @@ const makeStyles = (theme: Theme) =>
     alignItems: 'center',
     borderWidth: 1,
     borderColor: theme.border,
-    borderRadius: 20,
+    borderRadius: 18,
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: theme.cardAlt,
@@ -632,7 +651,7 @@ const makeStyles = (theme: Theme) =>
     fontWeight: '600',
   },
   remindPillTextActive: {
-    color: '#0C1A10',
+    color: theme.onPrimary,
     fontWeight: '800',
   },
   errorText: {
@@ -666,7 +685,7 @@ const makeStyles = (theme: Theme) =>
     alignItems: 'center',
   },
   saveButtonText: {
-    color: '#0C1A10',
+    color: theme.onPrimary,
     fontSize: 15,
     fontWeight: '800',
   },

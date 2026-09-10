@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-export const DATABASE_VERSION = 6;
+export const DATABASE_VERSION = 9;
 
 async function ensureColumn(
   db: SQLiteDatabase,
@@ -232,6 +232,36 @@ export async function migrateDb(db: SQLiteDatabase): Promise<void> {
       `ALTER TABLE profile ADD COLUMN birth_day INTEGER;`
     );
     version = 6;
+  }
+
+  if (version === 6) {
+    await ensureColumn(
+      db,
+      'tasks',
+      'emoji',
+      `ALTER TABLE tasks ADD COLUMN emoji TEXT;`
+    );
+    version = 7;
+  }
+
+  if (version === 7) {
+    await ensureColumn(
+      db,
+      'profile',
+      'weight_freq',
+      `ALTER TABLE profile ADD COLUMN weight_freq INTEGER;`
+    );
+    version = 8;
+  }
+
+  if (version === 8) {
+    await ensureColumn(
+      db,
+      'profile',
+      'gender',
+      `ALTER TABLE profile ADD COLUMN gender TEXT;`
+    );
+    version = 9;
   }
 
   await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);

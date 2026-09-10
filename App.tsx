@@ -1,13 +1,12 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import {
   NavigationContainer,
   DarkTheme,
   DefaultTheme,
-  useNavigation,
 } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -25,6 +24,7 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import TrainingsScreen from './src/screens/TrainingsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
+import AtividadesScreen from './src/screens/AtividadesScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -53,30 +53,6 @@ function HomeTabIcon() {
   );
 }
 
-function SettingsHeaderButton() {
-  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
-  const { theme } = useTheme();
-  return (
-    <Pressable
-      onPress={() => navigation.navigate('Config')}
-      hitSlop={10}
-      style={{
-        marginRight: 16,
-        width: 34,
-        height: 34,
-        borderRadius: 17,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: theme.cardAlt,
-        borderWidth: 1,
-        borderColor: theme.border,
-      }}
-    >
-      <Text style={{ fontSize: 16 }}>⚙️</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   tabIcon: {
     fontSize: 20,
@@ -92,6 +68,7 @@ const styles = StyleSheet.create({
 function Navigator() {
   const db = useSQLiteContext();
   const { theme, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const baseTheme = isDark ? DarkTheme : DefaultTheme;
   const [creatureName, setCreatureName] = React.useState('Criatura');
 
@@ -130,17 +107,28 @@ function Navigator() {
           headerStyle: { backgroundColor: theme.card },
           headerTitleStyle: { color: theme.text, fontWeight: '800' },
           headerShadowVisible: false,
-          headerRight: () => <SettingsHeaderButton />,
-          tabBarStyle: { backgroundColor: theme.card, borderTopColor: theme.border },
+          tabBarStyle: {
+            backgroundColor: theme.card,
+            height: 56 + insets.bottom,
+            paddingTop: 6,
+            paddingBottom: Math.max(insets.bottom, 6),
+            borderTopWidth: 0,
+          },
+          tabBarItemStyle: { paddingVertical: 2 },
           tabBarActiveTintColor: theme.primary,
           tabBarInactiveTintColor: theme.subtext,
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+          tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
         }}
       >
         <Tab.Screen
           name="Rotina"
           component={RoutineScreen}
           options={{ title: 'Rotina', tabBarIcon: () => <TabIcon emoji="📋" /> }}
+        />
+        <Tab.Screen
+          name="Atividades"
+          component={AtividadesScreen}
+          options={{ title: 'Atividades', tabBarIcon: () => <TabIcon emoji="📊" /> }}
         />
         <Tab.Screen
           name="Treinos"
@@ -153,7 +141,7 @@ function Navigator() {
           options={{
             title: 'Hoje',
             tabBarIcon: () => <HomeTabIcon />,
-            tabBarLabelStyle: { fontSize: 12, fontWeight: '900' },
+            tabBarLabelStyle: { fontSize: 11, fontWeight: '900' },
           }}
         />
         <Tab.Screen
@@ -169,11 +157,7 @@ function Navigator() {
         <Tab.Screen
           name="Config"
           component={SettingsScreen}
-          options={{
-            title: 'Config',
-            tabBarButton: () => null,
-            tabBarItemStyle: { display: 'none' },
-          }}
+          options={{ title: 'Defin.', tabBarIcon: () => <TabIcon emoji="⚙️" /> }}
         />
       </Tab.Navigator>
     </NavigationContainer>

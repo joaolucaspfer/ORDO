@@ -5,6 +5,7 @@ import type { Task } from './types';
 export interface TaskInput {
   title: string;
   category: Category;
+  emoji?: string | null;
   time_min: number | null;
   days: number;
   details: string;
@@ -37,10 +38,11 @@ export async function tasksOnDay(db: SQLiteDatabase, dayIndex: number): Promise<
 
 export async function createTask(db: SQLiteDatabase, input: TaskInput): Promise<number> {
   const result = await db.runAsync(
-    `INSERT INTO tasks (title, category, time_min, days, details, target_minutes, remind_enabled, remind_before, position, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO tasks (title, category, emoji, time_min, days, details, target_minutes, remind_enabled, remind_before, position, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     input.title,
     input.category,
+    input.emoji ?? null,
     input.time_min,
     input.days,
     input.details,
@@ -59,10 +61,11 @@ export async function updateTask(
   input: TaskInput
 ): Promise<void> {
   await db.runAsync(
-    `UPDATE tasks SET title = ?, category = ?, time_min = ?, days = ?, details = ?, target_minutes = ?, remind_enabled = ?, remind_before = ?
+    `UPDATE tasks SET title = ?, category = ?, emoji = ?, time_min = ?, days = ?, details = ?, target_minutes = ?, remind_enabled = ?, remind_before = ?
      WHERE id = ?`,
     input.title,
     input.category,
+    input.emoji ?? null,
     input.time_min,
     input.days,
     input.details,

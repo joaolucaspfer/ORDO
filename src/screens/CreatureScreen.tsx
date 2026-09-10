@@ -1,13 +1,13 @@
 import React, { useCallback, useState } from 'react';
 import {
   Alert,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { PressableScale as Pressable } from '../components/PressableScale';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme, type Theme } from '../theme';
@@ -290,7 +290,7 @@ const makeStyles = (theme: Theme) =>
   },
   creatureCard: {
     backgroundColor: theme.card,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: theme.border,
     alignItems: 'center',
@@ -490,7 +490,7 @@ const makeStyles = (theme: Theme) =>
     paddingVertical: 9,
   },
   buyButtonText: {
-    color: '#0C1A10',
+    color: theme.onPrimary,
     fontSize: 13,
     fontWeight: '800',
   },
@@ -506,7 +506,7 @@ const makeStyles = (theme: Theme) =>
     fontWeight: '700',
   },
   removeButton: {
-    backgroundColor: 'rgba(228,105,91,0.15)',
+    backgroundColor: theme.dangerSoft,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 9,

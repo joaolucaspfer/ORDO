@@ -2,13 +2,14 @@ import React, { useCallback, useState } from 'react';
 import {
   Alert,
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { PressableScale as Pressable } from '../components/PressableScale';
+import TimeInput from '../components/TimeInput';
 import * as ImagePicker from 'expo-image-picker';
 import { useSQLiteContext, type SQLiteDatabase } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
@@ -16,6 +17,17 @@ import { useTheme, type Theme } from '../theme';
 import { getProfile, upsertProfile } from '../db/profile';
 import type { Profile } from '../db/types';
 import { persistProfilePhoto } from '../lib/profilePhoto';
+import {
+  GENDER_OPTIONS,
+  GENDER_LABEL,
+  normalizeBirthYearInput,
+  normalizeHeightInput,
+  isHeightValid,
+  validateBirthInput,
+  calcBmi,
+  bmiCategoryAdjusted,
+  computeAge,
+} from '../lib/health';
 import { getStats, type Stats } from '../db/streak';
 import { totalFocusMinutes } from '../db/sessions';
 import {
@@ -119,12 +131,27 @@ export default function ProfileScreen() {
 
   const savePersonal = async () => {
     if (!profile) return;
-    const year = birthYear.trim() === '' ? null : Math.min(Math.max(1900, Number(birthYear) || 0), 2026);
+    const year = birthYear.trim() === '' ? null : Math.min(Math.max(1900, Number(birthYear) || 0), new Date().getFullYear());
     const month = birthMonth.trim() === '' ? null : Math.min(Math.max(1, Number(birthMonth) || 0), 12);
     const day = birthDay.trim() === '' ? null : Math.min(Math.max(1, Number(birthDay) || 0), 31);
-    const height = heightCm.trim() === '' ? null : Math.min(Math.max(1, Number(heightCm) || 0), 250);
+    const birthErr = validateBirthInput(year, month, day);
+    if (birthErr) {
+      Alert.alert('Verifica os teus dados', birthErr);
+      return;
+    }
+    const height = heightCm.trim() === '' ? null : Number(heightCm);
+    if (height != null && !isHeightValid(height)) {
+      Alert.alert('Altura inválida', 'Indica uma altura entre 100 e 250 cm.');
+      return;
+    }
     await patch({ birth_year: year, birth_month: month, birth_day: day, height_cm: height });
     Alert.alert('Feito!', 'Dados pessoais atualizados.');
+  };
+
+  const saveGender = async (gender: string) => {
+    if (!profile) return;
+    await patch({ gender });
+    Alert.alert('Feito!', 'Género atualizado.');
   };
 
   const changePhoto = async () => {
@@ -182,6 +209,7 @@ export default function ProfileScreen() {
       goal_enabled: 1,
       goal_start_kg: start,
       goal_target_kg: target,
+      weight_freq: profile.weight_freq ?? 7,
     });
     await reload();
     Alert.alert('Objetivo definido 💪', `De ${start} kg para ${target} kg. Boa caminhada!`);
@@ -212,7 +240,24 @@ export default function ProfileScreen() {
     currentWeight != null
       ? weightProgress(profile.goal_start_kg, profile.goal_target_kg, currentWeight)
       : null;
-  const overdue = lastSinceDays != null && lastSinceDays >= 7;
+  const weightFreq = profile.weight_freq ?? 7;
+  const overdue = lastSinceDays != null && lastSinceDays >= weightFreq;
+  const bmi =
+    profile.height_cm != null && currentWeight != null
+      ? calcBmi(currentWeight, profile.height_cm)
+      : null;
+  const age = computeAge(profile.birth_year, profile.birth_month, profile.birth_day);
+  const bmiInfo = bmi != null ? bmiCategoryAdjusted(bmi, age) : null;
+  const hM = profile.height_cm != null ? profile.height_cm / 100 : null;
+  const bmiMin = hM != null ? Math.round(18.5 * hM * hM) : null;
+  const bmiMax =
+    hM != null ? Math.round((age != null && age >= 65 ? 28 : 24.9) * hM * hM) : null;
+  const bmiContext =
+    bmi != null && bmiMin != null && bmiMax != null
+      ? `Para ${profile.gender ? GENDER_LABEL[profile.gender] ?? 'ti' : 'ti'}${
+          age != null ? ` de ${age} anos` : ''
+        } com ${profile.height_cm} cm de altura, o peso aconselhado está entre ${bmiMin} e ${bmiMax} kg.`
+      : null;
 
   const suggestedTime = (minsAfter: number) => {
     return profile.wake_min != null
@@ -221,7 +266,12 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+    >
       <View style={styles.hero}>
         <Pressable style={styles.photoWrap} onPress={changePhoto}>
           {profile.photo_uri ? (
@@ -287,7 +337,7 @@ export default function ProfileScreen() {
             <TextInput
               style={styles.input}
               value={birthYear}
-              onChangeText={(t) => setBirthYear(t.replace(/[^0-9]/g, ''))}
+              onChangeText={(t) => setBirthYear(normalizeBirthYearInput(t))}
               placeholder="Ex.: 1998"
               placeholderTextColor={theme.subtext}
               keyboardType="number-pad"
@@ -298,12 +348,27 @@ export default function ProfileScreen() {
             <TextInput
               style={styles.input}
               value={heightCm}
-              onChangeText={(t) => setHeightCm(t.replace(/[^0-9]/g, ''))}
+              onChangeText={(t) => setHeightCm(normalizeHeightInput(t))}
               placeholder="Ex.: 175"
               placeholderTextColor={theme.subtext}
               keyboardType="number-pad"
             />
           </View>
+        </View>
+        <Text style={styles.fieldLabel}>Género</Text>
+        <View style={styles.chips}>
+          {GENDER_OPTIONS.map((g) => {
+            const active = profile.gender === g.value;
+            return (
+              <Pressable
+                key={g.value}
+                style={[styles.chip, active && styles.chipActive]}
+                onPress={() => saveGender(g.value)}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>{g.label}</Text>
+              </Pressable>
+            );
+          })}
         </View>
         <Pressable style={styles.saveButton} onPress={savePersonal}>
           <Text style={styles.saveButtonText}>Guardar dados</Text>
@@ -350,7 +415,8 @@ export default function ProfileScreen() {
             {overdue && (
               <View style={styles.banner}>
                 <Text style={styles.bannerText}>
-                  Já passaram {lastSinceDays} dias desde a última pesagem. Regista esta semana 😉
+                  Já passaram {lastSinceDays} dias desde a última pesagem. Está na hora de uma
+                  atualização 😉
                 </Text>
               </View>
             )}
@@ -410,6 +476,22 @@ export default function ProfileScreen() {
         )}
       </View>
 
+      {bmi != null && bmiInfo != null && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>🧮 Índice de Massa Corporal</Text>
+          <View style={styles.bmiRow}>
+            <Text style={styles.bmiValue}>{bmi.toFixed(1)}</Text>
+            <Text style={[styles.bmiCategory, { color: theme[bmiInfo.key] }]}>{bmiInfo.label}</Text>
+          </View>
+          <Text style={styles.hint}>{bmiInfo.note}</Text>
+          {bmiContext != null && <Text style={styles.hint}>{bmiContext}</Text>}
+          <Text style={styles.hint}>
+            Interpretado com a tua altura, género e idade. Atualiza o peso quando a página Hoje te
+            pedir.
+          </Text>
+        </View>
+      )}
+
       <View style={styles.card}>
         <Text style={styles.cardTitle}>⏰ Hora de acordar</Text>
         <Text style={styles.hint}>
@@ -426,13 +508,12 @@ export default function ProfileScreen() {
           })}
         </View>
         <View style={styles.row}>
-          <TextInput
+          <TimeInput
             style={[styles.input, styles.kgInput]}
             value={wakeCustom}
-            onChangeText={setWakeCustom}
+            onChange={(label) => setWakeCustom(label)}
             placeholder="HH:MM"
             placeholderTextColor={theme.subtext}
-            keyboardType="numbers-and-punctuation"
             onEndEditing={saveWakeCustom}
           />
           <Pressable style={styles.saveButton} onPress={saveWakeCustom}>
@@ -490,7 +571,7 @@ const makeStyles = (theme: Theme) =>
       alignItems: 'center',
       gap: 16,
       backgroundColor: theme.card,
-      borderRadius: 18,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: theme.border,
       padding: 16,
@@ -525,7 +606,7 @@ const makeStyles = (theme: Theme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    photoBadgeText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900' },
+    photoBadgeText: { color: theme.onPrimary, fontSize: 14, fontWeight: '900' },
     heroFields: { flex: 1, gap: 10 },
     input: {
       backgroundColor: theme.cardAlt,
@@ -574,7 +655,7 @@ const makeStyles = (theme: Theme) =>
     chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
     chip: {
       backgroundColor: theme.cardAlt,
-      borderRadius: 20,
+      borderRadius: 18,
       paddingHorizontal: 14,
       paddingVertical: 8,
       borderWidth: 1,
@@ -582,7 +663,22 @@ const makeStyles = (theme: Theme) =>
     },
     chipActive: { backgroundColor: theme.primary, borderColor: theme.primary },
     chipText: { color: theme.subtext, fontSize: 13, fontWeight: '600' },
-    chipTextActive: { color: '#FFFFFF', fontWeight: '800' },
+    chipTextActive: { color: theme.onPrimary, fontWeight: '800' },
+    bmiRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: 10,
+    },
+    bmiValue: {
+      color: theme.text,
+      fontSize: 30,
+      fontWeight: '900',
+    },
+    bmiCategory: {
+      fontSize: 16,
+      fontWeight: '800',
+    },
     track: {
       height: 10,
       borderRadius: 5,
@@ -619,7 +715,7 @@ const makeStyles = (theme: Theme) =>
       alignItems: 'center',
       marginTop: 12,
     },
-    primaryButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+    primaryButtonText: { color: theme.onPrimary, fontSize: 15, fontWeight: '800' },
     statsRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
     statCard: {
       flex: 1,
